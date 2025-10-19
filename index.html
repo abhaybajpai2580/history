@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>History | My Website</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      overflow: hidden; /* Prevent scrolling of the body itself */
+      font-family: "Segoe UI", sans-serif;
+    }
+    body {
+      background: url('https://i.pinimg.com/736x/a4/1f/79/a41f79356b13c80ebe4df9b4884d7e94.jpg') no-repeat center center / cover;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    body::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      backdrop-filter: blur(8px);
+      background-color: rgba(255, 255, 255, 0.03);
+      z-index: 0;
+    }
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 90%;
+      max-width: 900px;
+      height: 80%;
+      padding: 25px 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      background-color: rgba(255, 255, 255, 0.6);
+      border-radius: 15px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      overflow: hidden; /* Prevent container itself from overflowing, list inside will scroll */
+    }
+    h1 {
+      font-size: 2rem;
+      color: #1f2937;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    #history-list {
+      flex: 1; /* Takes available vertical space */
+      width: 100%;
+      overflow-y: auto;
+      padding-right: 10px; /* For scrollbar */
+      margin-top: 10px;
+    }
+    .history-card {
+      background-color: rgba(255,255,255,0.9);
+      border-left: 5px solid #4f46e5;
+      padding: 12px 18px;
+      margin-bottom: 12px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .history-card-content {
+      flex-grow: 1;
+      margin-right: 10px; /* Space before delete button */
+    }
+    .history-card p {
+      margin: 5px 0;
+      color: #333;
+      font-size: 15px;
+      word-break: break-word; /* Prevent long links from breaking layout */
+    }
+    .history-card a {
+      color: #4f46e5;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .history-card a:hover {
+      text-decoration: underline;
+    }
+    .delete-item-btn {
+      background-color: #f87171;
+      color: white;
+      border: none;
+      padding: 7px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 13px;
+      margin-left: 10px; /* Ensure some space if content is short */
+      transition: background-color 0.2s ease;
+      line-height: 1;
+      flex-shrink: 0; /* Prevent button from shrinking */
+    }
+    .delete-item-btn:hover {
+      background-color: #ef4444;
+    }
+    .clear-btn {
+      align-self: flex-end; /* Default for larger screens */
+      margin-top: 15px;
+      background-color: #dc2626;
+      color: white;
+      padding: 10px 22px;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      cursor: pointer;
+      box-shadow: 0 3px 8px rgba(220, 38, 38, 0.6);
+      transition: background-color 0.3s ease;
+      width: auto; /* Default width */
+    }
+    .clear-btn:hover {
+      background-color: #b91c1c;
+    }
+    .no-history {
+      text-align: center;
+      color: gray;
+      font-style: italic;
+      margin-top: 20px;
+      font-size: 16px;
+    }
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      top: 30px;
+      right: 30px;
+      background-color: #10b981;
+      color: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      font-size: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      opacity: 0;
+      transform: translateY(-20px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      z-index: 9999;
+      max-width: 350px;
+    }
+    .toast.info {
+        background-color: #3b82f6;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    /* Modal Confirmation */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9998;
+      padding: 15px; /* Padding for overlay to prevent modal touching edges */
+    }
+    .modal {
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+      width: 100%; /* Take available width within overlay padding */
+      max-width: 400px;
+    }
+    .modal h2 {
+      margin-bottom: 15px;
+      color: #1f2937;
+      font-size: 1.5rem;
+    }
+    .modal p {
+      margin-bottom: 25px;
+      color: #555;
+      font-size: 1rem;
+    }
+    .modal-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 15px; /* Space between buttons in row */
+    }
+    .modal button { /* General modal button styles */
+      padding: 10px 18px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 600;
+      flex-grow: 1; /* Allow buttons to share space */
+      max-width: 150px; /* Prevent buttons from becoming too wide */
+    }
+    .modal .confirm {
+      background-color: #dc2626;
+      color: white;
+    }
+    .modal .cancel {
+      background-color: #e5e7eb;
+      color: #111827;
+    }
+    .modal .confirm:hover {
+      background-color: #b91c1c;
+    }
+    .modal .cancel:hover {
+      background-color: #d1d5db;
+    }
+
+    /* --- Mobile Responsiveness --- */
+    @media (max-width: 768px) {
+      .container {
+        width: 95%;
+        height: 90vh; /* More vertical space on mobile */
+        padding: 20px 15px;
+      }
+      h1 {
+        font-size: 1.6rem;
+        margin-bottom: 15px;
+      }
+      #history-list {
+        padding-right: 5px; /* Smaller scrollbar gap */
+      }
+      .history-card {
+        padding: 10px 12px;
+        align-items: flex-start; /* Align items to top if content wraps */
+      }
+      .history-card p {
+        font-size: 14px;
+      }
+      .delete-item-btn {
+        padding: 6px 9px;
+        font-size: 12px;
+        margin-left: 8px; /* Slightly less margin */
+      }
+      .clear-btn {
+        padding: 10px 18px;
+        font-size: 14px;
+        width: 100%; /* Full width for easier tapping */
+        align-self: center; /* Center it if full width */
+        margin-top: 10px;
+      }
+      .toast {
+        width: calc(100% - 30px); /* Full width with some margin */
+        left: 15px;
+        right: 15px;
+        top: 15px;
+        font-size: 14px;
+        padding: 12px 15px;
+      }
+      .modal {
+        padding: 20px;
+      }
+      .modal h2 {
+        font-size: 1.3rem;
+      }
+      .modal p {
+        font-size: 0.9rem;
+        margin-bottom: 20px;
+      }
+      .modal-buttons {
+        flex-direction: column; /* Stack buttons vertically */
+        gap: 10px; /* Space between stacked buttons */
+      }
+      .modal button {
+        width: 100%; /* Full width for stacked buttons */
+        max-width: none; /* Override max-width for stacked buttons */
+        padding: 12px; /* Slightly larger padding for easier tap */
+        font-size: 0.9rem;
+      }
+    }
+
+    @media (max-width: 480px) { /* Even smaller screens */
+        h1 {
+            font-size: 1.4rem;
+        }
+        .history-card p {
+            font-size: 13px;
+        }
+         .history-card-content {
+            margin-right: 5px;
+        }
+        .delete-item-btn {
+            padding: 5px 7px;
+        }
+        .toast {
+            font-size: 13px;
+        }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📜 User Activity History</h1>
+    <div id="history-list"></div>
+    <button id="clearBtn" class="clear-btn">🗑️ Clear All History</button>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast">Notification Message</div>
+
+  <!-- Confirmation Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <h2>Confirm Deletion</h2>
+      <p>Are you sure you want to delete all your history? This action cannot be undone.</p>
+      <div class="modal-buttons"> <!-- Wrapper for modal buttons -->
+        <button class="confirm" id="confirmDelete">Yes, Delete</button>
+        <button class="cancel" id="cancelDelete">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const historyList = document.getElementById("history-list");
+    const clearBtn = document.getElementById("clearBtn");
+    const toast = document.getElementById("toast");
+    const modalOverlay = document.getElementById("modalOverlay"); // Renamed for clarity
+    const confirmDelete = document.getElementById("confirmDelete");
+    const cancelDelete = document.getElementById("cancelDelete");
+
+    let historyData = JSON.parse(localStorage.getItem("user-history")) || [
+      { title: "Visited Homepage", timestamp: "25-May-2025 10:00 AM", link: "https://example.com/home" },
+      { title: "Searched for History of Web Browsers and their evolution over time", timestamp: "25-May-2025 10:15 AM", link: "https://example.com/search?q=history+web+browsers" },
+      { title: "Read article on WW2", timestamp: "24-May-2025 08:45 AM", link: "https://example.com/ww2" },
+      { title: "Logged in", timestamp: "23-May-2025 09:00 AM", link: "https://example.com/login" },
+    ];
+
+    if (localStorage.getItem("user-history") === null && historyData.length > 0) {
+      localStorage.setItem("user-history", JSON.stringify(historyData));
+    }
+
+    function renderHistory() {
+      if (historyData.length === 0) {
+        historyList.innerHTML = `<p class="no-history">No history found.</p>`;
+        clearBtn.style.display = 'none';
+        return;
+      }
+      
+      historyList.innerHTML = "";
+      historyData.forEach((item, index) => {
+        const card = document.createElement("div");
+        card.className = "history-card";
+        card.innerHTML = `
+          <div class="history-card-content">
+            <p><strong>Title:</strong> ${item.title}</p>
+            <p><strong>Date & Time:</strong> ${item.timestamp}</p>
+            <p><strong>Link:</strong> <a href="${item.link}" target="_blank" rel="noopener noreferrer">${item.link}</a></p>
+          </div>
+          <button class="delete-item-btn" data-index="${index}" title="Delete this item">🗑️</button>
+        `;
+        historyList.appendChild(card);
+      });
+      clearBtn.style.display = 'block';
+    }
+
+    function showToast(message, type = 'success') {
+      toast.textContent = message;
+      toast.className = 'toast show'; 
+      if (type === 'info') {
+        toast.classList.add('info');
+      } else {
+         toast.style.backgroundColor = '#10b981'; 
+      }
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2500);
+    }
+
+    historyList.addEventListener("click", (event) => {
+      const deleteButton = event.target.closest(".delete-item-btn");
+      if (deleteButton) {
+        const indexToDelete = parseInt(deleteButton.dataset.index);
+        if (indexToDelete >= 0 && indexToDelete < historyData.length) {
+          const deletedItemTitle = historyData[indexToDelete].title;
+          historyData.splice(indexToDelete, 1); 
+          localStorage.setItem("user-history", JSON.stringify(historyData)); 
+          renderHistory(); 
+          showToast(`Item "${deletedItemTitle.substring(0,30)}..." deleted.`, 'info');
+        }
+      }
+    });
+
+    clearBtn.addEventListener("click", () => {
+      if (historyData.length > 0) {
+         modalOverlay.style.display = "flex";
+      } else {
+          showToast("History is already empty.", "info");
+      }
+    });
+
+    cancelDelete.addEventListener("click", () => {
+      modalOverlay.style.display = "none";
+    });
+
+    confirmDelete.addEventListener("click", () => {
+      historyData.length = 0; 
+      localStorage.removeItem("user-history");
+      renderHistory(); 
+      modalOverlay.style.display = "none";
+      showToast("Your history has been successfully cleared.");
+    });
+
+    renderHistory();
+  </script>
+</body>
+</html>
